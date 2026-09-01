@@ -1,0 +1,1 @@
+/nix/store/fwg1wbgki7mp1da91paq17ccrjm8mc0k-mysql-server/bin/mysql-server

@@ -1,0 +1,1 @@
+/nix/store/r88418hjs0qcp21648mky45jh77pdh1l-mysql-isready/bin/mysql-isready

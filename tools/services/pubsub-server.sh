@@ -1,0 +1,1 @@
+/nix/store/62ig6mr0m9dp7j5qymna0p46in8fwf6j-pubsub-server/bin/pubsub-server

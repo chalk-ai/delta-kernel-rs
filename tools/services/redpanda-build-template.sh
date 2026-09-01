@@ -1,0 +1,1 @@
+/nix/store/f6fgaip5vbxxww9zb1gwqx2n6jmns82q-redpanda-build-template/bin/redpanda-build-template

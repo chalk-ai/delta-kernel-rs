@@ -1,0 +1,1 @@
+/nix/store/kfnv9y2xps6cgjigkrmdvg6fd8i1m6qz-pg-initdb/bin/pg-initdb

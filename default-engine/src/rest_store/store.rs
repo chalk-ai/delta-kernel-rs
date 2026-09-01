@@ -428,6 +428,8 @@ fn not_supported(op: &str) -> ObjectStoreError {
 /// A successful PUT result; this store surfaces no etag or version.
 fn put_result() -> PutResult {
     PutResult {
+        // object_store 0.14 carries per-request extensions; none are set here.
+        extensions: Default::default(),
         e_tag: None,
         version: None,
     }
@@ -501,6 +503,8 @@ impl ObjectStore for RestObjectStore {
             options.check_preconditions(&meta)?;
             let size = meta.size;
             return Ok(GetResult {
+                // object_store 0.14 carries per-request extensions; none are set here.
+                extensions: Default::default(),
                 payload: GetResultPayload::Stream(Box::pin(futures::stream::empty())),
                 range: 0..size,
                 meta,
@@ -566,6 +570,8 @@ impl ObjectStore for RestObjectStore {
 
         let stream = Box::pin(futures::stream::once(futures::future::ready(Ok(content))));
         Ok(GetResult {
+            // object_store 0.14 carries per-request extensions; none are set here.
+            extensions: Default::default(),
             payload: GetResultPayload::Stream(stream),
             meta,
             range,

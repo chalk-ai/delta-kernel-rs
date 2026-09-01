@@ -1,0 +1,1 @@
+/nix/store/dgrm89i8yyh0j5vbs67xsmi39blv1fip-clickhouse-server/bin/clickhouse-server

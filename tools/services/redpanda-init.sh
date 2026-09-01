@@ -1,0 +1,1 @@
+/nix/store/kxb96wmr7g5h3iddvybm6hf3vf9ig4q0-redpanda-init/bin/redpanda-init

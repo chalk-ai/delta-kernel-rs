@@ -1,0 +1,1 @@
+/nix/store/hn0hx0zj5vxw6s1vw44skn98m2xd2w8d-dynamodb-isready/bin/dynamodb-isready

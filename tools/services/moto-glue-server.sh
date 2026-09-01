@@ -1,0 +1,1 @@
+/nix/store/5c2mg4j10say43fp1sskzrmgmfmbci2c-moto-glue-server/bin/moto-glue-server

@@ -1,0 +1,1 @@
+/nix/store/hhmg4vk7rz54c5ars1vijp4fm95s2c9l-mysql-init/bin/mysql-init

@@ -1,0 +1,1 @@
+/nix/store/mgm1mi4dv2x3qnf7w23cqmyixqa97lp1-redis-server/bin/redis-server

@@ -1,0 +1,1 @@
+/nix/store/kz8qkvgdaaf587r0rlfcrah90d7nqwb2-pg-server/bin/pg-server

@@ -1,0 +1,1 @@
+/nix/store/icsrmp5b4lwzppx1yfm38wg78dq115vr-floci-server/bin/floci-server

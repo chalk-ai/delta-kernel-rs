@@ -1,0 +1,1 @@
+/nix/store/957cq0mqsyv64m5k18wlrnsyw3mzxzs8-mysql-build-template/bin/mysql-build-template

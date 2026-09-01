@@ -1,0 +1,1 @@
+/nix/store/6halfrr7vn0x49d8p4lhjbcvpkw60hvr-clickhouse-isready/bin/clickhouse-isready

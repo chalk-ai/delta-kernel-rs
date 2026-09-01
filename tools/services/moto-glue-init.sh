@@ -1,0 +1,1 @@
+/nix/store/yk5pvydz1z2j9qp16zn5h61c7vix0f5b-moto-glue-init/bin/moto-glue-init

@@ -1,0 +1,1 @@
+/nix/store/13z3gqhpr0283nd5s4s8c6cjiwfglj14-redpanda-isready/bin/redpanda-isready

@@ -1,0 +1,1 @@
+/nix/store/ym96hv2hlkffh6ff1bgl156p7368yzfv-redpanda-server/bin/redpanda-server

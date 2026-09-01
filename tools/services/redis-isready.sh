@@ -1,0 +1,1 @@
+/nix/store/mbnwyfb9l39v9bhlh3mf8li02i3n3ylf-redis-isready/bin/redis-isready

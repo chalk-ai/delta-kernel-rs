@@ -1,0 +1,1 @@
+/nix/store/3csvg99rmghmxi7g73s20sc53fg2nimc-dynamodb-server/bin/dynamodb-server

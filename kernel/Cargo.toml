@@ -64,7 +64,7 @@ z85 = "3.0.6"
 # lives in the `delta_kernel_default_engine` crate now.
 reqwest = { version = "0.13", default-features = false, optional = true }
 # both arrow versions below are optional and require object_store
-object_store_13 = { package = "object_store", version = "0.13.2", optional = true, features = ["aws", "azure", "gcp", "http"] }
+object_store_13 = { package = "object_store", version = "0.14.1", optional = true, features = ["aws", "azure", "gcp", "http"] }
 
 # arrow 58
 [dependencies.arrow_58]

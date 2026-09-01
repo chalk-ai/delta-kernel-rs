@@ -1,0 +1,1 @@
+/nix/store/kp8bsihmaqrd1bsp4lg9knk1s6mx7din-moto-glue-isready/bin/moto-glue-isready

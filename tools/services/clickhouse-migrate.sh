@@ -1,0 +1,1 @@
+/nix/store/yxjp36dvsb2w0ahss0539z0jcyjzxa76-clickhouse-migrate/bin/clickhouse-migrate

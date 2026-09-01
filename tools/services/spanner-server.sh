@@ -1,0 +1,1 @@
+/nix/store/qcl4cc9d7cpgg56j2l2r6ks0a6h5mbd1-spanner-server/bin/spanner-server
