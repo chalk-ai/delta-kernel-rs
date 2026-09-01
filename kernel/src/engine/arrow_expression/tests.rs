@@ -6,13 +6,14 @@ use Predicate as Pred;
 
 use super::*;
 use crate::arrow::array::{
-    create_array, Array, ArrayRef, BinaryViewArray, BooleanArray, GenericStringArray, Int32Array,
-    Int32Builder, ListArray, ListViewArray, MapArray, MapBuilder, MapFieldNames, StringArray,
-    StringBuilder, StringViewArray, StructArray,
+    create_array, Array, ArrayRef, BinaryViewArray, BooleanArray, Date32Array, Date64Array,
+    GenericStringArray, Int32Array, Int32Builder, ListArray, ListViewArray, MapArray, MapBuilder,
+    MapFieldNames, StringArray, StringBuilder, StringViewArray, StructArray,
+    TimestampMicrosecondArray, TimestampMillisecondArray,
 };
 use crate::arrow::buffer::{BooleanBuffer, NullBuffer, OffsetBuffer, ScalarBuffer};
 use crate::arrow::compute::kernels::cmp::{gt_eq, lt};
-use crate::arrow::datatypes::{DataType, Field, Fields, Schema};
+use crate::arrow::datatypes::{DataType, Field, Fields, Schema, TimeUnit};
 use crate::engine::arrow_data::{ArrowEngineData, EngineDataArrowExt as _};
 use crate::engine::arrow_expression::evaluate_expression::to_json;
 use crate::engine::arrow_expression::opaque::{
@@ -1490,4 +1491,105 @@ fn test_void_scalar_to_array() {
     let array = scalar.to_array(5).unwrap();
     assert_eq!(array.len(), 5);
     assert_eq!(*array.data_type(), DataType::Null);
+}
+
+// PATCHED(chalk): coverage for `align_temporal_comparison_inputs` — comparisons between
+// mismatched date/timestamp types must evaluate rather than error.
+#[test]
+fn test_binary_cmp_date32_against_timestamp_literal() {
+    let schema = Schema::new(vec![Field::new("d", DataType::Date32, false)]);
+    let values = Date32Array::from(vec![0, 1]);
+    let batch = RecordBatch::try_new(Arc::new(schema), vec![Arc::new(values)]).unwrap();
+    let column = column_expr!("d");
+
+    let predicate = column.ge(Expr::literal(Scalar::Timestamp(13 * 60 * 60 * 1_000_000)));
+    let results = evaluate_predicate(&predicate, &batch, false).unwrap();
+
+    assert_eq!(results, BooleanArray::from(vec![false, true]));
+}
+
+#[test]
+fn test_binary_cmp_date32_against_timestamp_ntz_literal() {
+    let schema = Schema::new(vec![Field::new("d", DataType::Date32, false)]);
+    let values = Date32Array::from(vec![0, 1]);
+    let batch = RecordBatch::try_new(Arc::new(schema), vec![Arc::new(values)]).unwrap();
+    let column = column_expr!("d");
+
+    let predicate = column.ge(Expr::literal(Scalar::TimestampNtz(
+        13 * 60 * 60 * 1_000_000,
+    )));
+    let results = evaluate_predicate(&predicate, &batch, false).unwrap();
+
+    assert_eq!(results, BooleanArray::from(vec![false, true]));
+}
+
+#[test]
+fn test_binary_cmp_date64_against_date_literal() {
+    let schema = Schema::new(vec![Field::new("d", DataType::Date64, false)]);
+    let values = Date64Array::from(vec![0, 86_400_000]);
+    let batch = RecordBatch::try_new(Arc::new(schema), vec![Arc::new(values)]).unwrap();
+    let column = column_expr!("d");
+
+    let predicate = column.ge(Expr::literal(Scalar::Date(1)));
+    let results = evaluate_predicate(&predicate, &batch, false).unwrap();
+
+    assert_eq!(results, BooleanArray::from(vec![false, true]));
+}
+
+#[test]
+fn test_binary_cmp_date64_against_timestamp_literal() {
+    let schema = Schema::new(vec![Field::new("d", DataType::Date64, false)]);
+    let values = Date64Array::from(vec![0, 86_400_000]);
+    let batch = RecordBatch::try_new(Arc::new(schema), vec![Arc::new(values)]).unwrap();
+    let column = column_expr!("d");
+
+    let predicate = column.ge(Expr::literal(Scalar::Timestamp(13 * 60 * 60 * 1_000_000)));
+    let results = evaluate_predicate(&predicate, &batch, false).unwrap();
+
+    assert_eq!(results, BooleanArray::from(vec![false, true]));
+}
+
+#[test]
+fn test_binary_cmp_timestamp_unit_mismatch() {
+    let values = TimestampMillisecondArray::from(vec![0, 86_400_000]).with_timezone("UTC");
+    let schema = Schema::new(vec![Field::new("ts", values.data_type().clone(), false)]);
+    let batch = RecordBatch::try_new(Arc::new(schema), vec![Arc::new(values)]).unwrap();
+    let column = column_expr!("ts");
+
+    let predicate = column.ge(Expr::literal(Scalar::Timestamp(13 * 60 * 60 * 1_000_000)));
+    let results = evaluate_predicate(&predicate, &batch, false).unwrap();
+
+    assert_eq!(results, BooleanArray::from(vec![false, true]));
+}
+
+#[test]
+fn test_binary_cmp_timestamp_timezone_mismatch() {
+    let values = TimestampMicrosecondArray::from(vec![0, 86_400_000_000]).with_timezone("UTC");
+    let schema = Schema::new(vec![Field::new("ts", values.data_type().clone(), false)]);
+    let batch = RecordBatch::try_new(Arc::new(schema), vec![Arc::new(values)]).unwrap();
+    let column = column_expr!("ts");
+
+    let predicate = column.ge(Expr::literal(Scalar::TimestampNtz(
+        13 * 60 * 60 * 1_000_000,
+    )));
+    let results = evaluate_predicate(&predicate, &batch, false).unwrap();
+
+    assert_eq!(results, BooleanArray::from(vec![false, true]));
+}
+
+#[test]
+fn test_binary_cmp_timestamp_full_mismatch() {
+    let values = TimestampMillisecondArray::from(vec![0, 86_400_000]);
+    let schema = Schema::new(vec![Field::new(
+        "ts",
+        DataType::Timestamp(TimeUnit::Millisecond, None),
+        false,
+    )]);
+    let batch = RecordBatch::try_new(Arc::new(schema), vec![Arc::new(values)]).unwrap();
+    let column = column_expr!("ts");
+
+    let predicate = column.ge(Expr::literal(Scalar::Timestamp(13 * 60 * 60 * 1_000_000)));
+    let results = evaluate_predicate(&predicate, &batch, false).unwrap();
+
+    assert_eq!(results, BooleanArray::from(vec![false, true]));
 }

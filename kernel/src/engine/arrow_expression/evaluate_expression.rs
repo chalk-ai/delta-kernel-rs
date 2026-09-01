@@ -705,6 +705,13 @@ pub fn evaluate_predicate(
             let left = evaluate_expression(left, batch, None)?;
             let right = evaluate_expression(right, batch, None)?;
 
+            // PATCHED(chalk): arrow's comparison kernels reject mismatched date/timestamp
+            // types, but Chalk pushes predicates whose literal type is derived from the
+            // caller's arrow schema rather than the Delta column type (e.g. a timestamp bound
+            // against a DATE column). Widen both sides to a common temporal type first so the
+            // comparison evaluates instead of erroring out.
+            let (left, right) = align_temporal_comparison_inputs(left, right)?;
+
             // If the types differ (e.g. one side is a view type and the other is not),
             // normalize both to view types since benchamrking results show that casting from
             // non-view to view type is faster than casting from view type to non-view
@@ -747,6 +754,92 @@ pub fn evaluate_predicate(
             }
         }
         Unknown(name) => Err(Error::unsupported(format!("Unknown predicate: {name:?}"))),
+    }
+}
+
+/// PATCHED(chalk): Widen mismatched date/timestamp comparison operands to a common temporal
+/// type. Arrow's comparison kernels require identical types, so a Date32 column compared
+/// against a timestamp literal (or two timestamps with different units/timezones) would
+/// otherwise fail. Non-temporal or already-matching operands pass through untouched.
+fn align_temporal_comparison_inputs(
+    left: ArrayRef,
+    right: ArrayRef,
+) -> DeltaResult<(ArrayRef, ArrayRef)> {
+    use ArrowDataType::*;
+
+    fn cast_array_to_type(array: &ArrayRef, data_type: &ArrowDataType) -> DeltaResult<ArrayRef> {
+        Ok(cast(array.as_ref(), data_type)?)
+    }
+
+    fn timestamp_unit_rank(unit: &TimeUnit) -> u8 {
+        match unit {
+            TimeUnit::Second => 0,
+            TimeUnit::Millisecond => 1,
+            TimeUnit::Microsecond => 2,
+            TimeUnit::Nanosecond => 3,
+        }
+    }
+
+    fn common_timestamp_type(
+        left_unit: TimeUnit,
+        left_tz: &Option<Arc<str>>,
+        right_unit: TimeUnit,
+        right_tz: &Option<Arc<str>>,
+    ) -> ArrowDataType {
+        let unit = if timestamp_unit_rank(&left_unit) >= timestamp_unit_rank(&right_unit) {
+            left_unit
+        } else {
+            right_unit
+        };
+
+        // When timestamp timezone metadata disagrees, compare raw epoch values by
+        // normalizing to an unzoned timestamp type.
+        let timezone = if left_tz == right_tz {
+            left_tz.clone()
+        } else {
+            None
+        };
+
+        ArrowDataType::Timestamp(unit, timezone)
+    }
+
+    let left_type = left.data_type().clone();
+    let right_type = right.data_type().clone();
+
+    let target_type = match (&left_type, &right_type) {
+        (Date32, Date64) | (Date64, Date32) => Some(Date64),
+        (Date32, Timestamp(unit, tz))
+        | (Date64, Timestamp(unit, tz))
+        | (Timestamp(unit, tz), Date32)
+        | (Timestamp(unit, tz), Date64) => Some(Timestamp(*unit, tz.clone())),
+        (Timestamp(left_unit, left_tz), Timestamp(right_unit, right_tz))
+            if left_unit != right_unit || left_tz != right_tz =>
+        {
+            Some(common_timestamp_type(
+                *left_unit,
+                left_tz,
+                *right_unit,
+                right_tz,
+            ))
+        }
+        _ => None,
+    };
+
+    match target_type {
+        Some(target_type) => {
+            let left = if left_type == target_type {
+                left
+            } else {
+                cast_array_to_type(&left, &target_type)?
+            };
+            let right = if right_type == target_type {
+                right
+            } else {
+                cast_array_to_type(&right, &target_type)?
+            };
+            Ok((left, right))
+        }
+        None => Ok((left, right)),
     }
 }
 
